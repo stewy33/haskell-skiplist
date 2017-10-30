@@ -1,9 +1,10 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
-module SkipList where
+module Data.SkipList.Pure.Internal where
 
 import Data.Monoid
 import System.Random
+import Debug.Trace
 
 data Node k v
     = Node { nKey :: k
@@ -59,7 +60,7 @@ numWins = go 0
                then go (succ n) g
                else (n, g)
 
-addLevels :: Ord k => k -> v -> Int -> SkipList k v -> SkipList k v
+addLevels :: (Show k, Show v, Ord k) => k -> v -> Int -> SkipList k v -> SkipList k v
 addLevels k v numLevels skp@(SkipList g h i)
     | numLevels <= 0 = skp
     | otherwise = go numLevels $ splitLevel i
@@ -76,8 +77,8 @@ addLevels k v numLevels skp@(SkipList g h i)
     splitLevel node =
         case nSibling node of
             Head s c -> (node {nSibling = Nil}, Head s c)
-            nS ->
-                let (next, r) = splitLevel nS
+            sN ->
+                let (next, r) = splitLevel sN
                 in (node {nSibling = next}, r)
 
 member :: Ord k => k -> SkipList k v -> Bool
@@ -89,7 +90,7 @@ member k = memberNode . skpInternal
       | nodeLTEKey (sibling n) k = memberNode $ nSibling n
       | otherwise = memberNode $ nChild n
 
-insert :: Ord k => k -> v -> SkipList k v -> SkipList k v
+insert :: (Show k, Show v, Ord k) => k -> v -> SkipList k v -> SkipList k v
 insert k v (SkipList g h i) =
     let (i', l, g') = insertSiblings i
     in addLevels k v l $ SkipList g' h i'
@@ -127,5 +128,5 @@ delete k (SkipList g h i) = SkipList g h $ findAndDelete i
 empty :: RandomGen g => g -> SkipList k v
 empty seed = SkipList seed 0 (Head Nil Nil)
 
-singleton :: (RandomGen g, Ord k) => k -> v -> g -> SkipList k v
-singleton k v = insert k v . empty
+--singleton :: (RandomGen g, Ord k) => k -> v -> g -> SkipList k v
+--singleton k v = insert k v . empty
