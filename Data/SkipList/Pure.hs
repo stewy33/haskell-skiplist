@@ -1,11 +1,17 @@
 module Data.SkipList.Pure (
     SkipList()
-    , member
-    , empty
-    , singleton
-    , insert
-    , adjust
-    , delete
+      , member
+      , empty
+      , mkStdGen
+      , singleton
+      , insert
+      , adjust
+      , delete
+      , fromList
+      , toList
+      , mkStdGen
     ) where
 
 import Data.SkipList.Pure.Internal
+import System.Random
+

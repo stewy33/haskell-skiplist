@@ -3,8 +3,8 @@
 module Data.SkipList.Pure.Internal where
 
 import Data.Monoid
-import Debug.Trace
 import System.Random
+import Control.DeepSeq
 import Prelude hiding (lookup)
 
 data Node k v
@@ -21,24 +21,7 @@ data SkipList k v = forall g. RandomGen g =>
                               SkipList
     { skpSeed :: g
     , skpInternal :: Node k v
-    }
-
-instance (Show k, Show v) => Show (SkipList k v) where
-    show (SkipList _ i) = "SkipList {\n" ++ "\n\tskpInternal = \n\t" ++ show i ++ "\n}"
-
-instance Functor (SkipList k) where
-    fmap f skp = skp {skpInternal = go $ skpInternal skp}
-      where
-        go Nil = Nil
-        go (Head s c) = Head (go s) $ go c
-        go (Node k v s c) = Node k (f v) (go s) $ go c
-
-instance Foldable (SkipList k) where
-    foldMap f skp = go $ skpInternal skp
-      where
-        go Nil = mempty
-        go (Head s c) = go c <> go s
-        go (Node _ v s c) = f v <> go c <> go s
+    } 
 
 null :: SkipList k v -> Bool
 null (SkipList _ (Head _ _)) = True
@@ -161,9 +144,38 @@ delete k (SkipList g i) = SkipList g $ findAndDelete i
         go Nil = nSibling toDelete
         go n = n {nSibling = go $ nSibling n}
 
+fromList :: (RandomGen g, Ord k) => g -> [(k, v)] -> SkipList k v
+fromList = foldr (\(k, v) skp -> insert k v skp) . empty
+
 toList :: SkipList k v -> [(k, v)]
 toList skp = go (skpInternal skp) []
   where
     go Nil = id
     go (Head s c) = go s . go c
     go (Node k v s c) = go s . go c . ((k, v) :)
+
+
+instance (Show k, Show v) => Show (SkipList k v) where
+    show (SkipList _ i) = "SkipList {\n" ++ "\n\tskpInternal = \n\t" ++ show i ++ "\n}"
+
+instance Functor (SkipList k) where
+    fmap f skp = skp {skpInternal = go $ skpInternal skp}
+      where
+        go Nil = Nil
+        go (Head s c) = Head (go s) $ go c
+        go (Node k v s c) = Node k (f v) (go s) $ go c
+
+instance Foldable (SkipList k) where
+    foldMap f skp = go $ skpInternal skp
+      where
+        go Nil = mempty
+        go (Head s c) = go c <> go s
+        go (Node _ v s c) = f v <> go c <> go s
+
+instance (NFData k, NFData v) => NFData (SkipList k v) where
+    rnf (SkipList _ i) = rnf i
+
+instance (NFData k, NFData v) => NFData (Node k v) where
+    rnf Nil = ()
+    rnf (Head s c) = rnf s `seq` rnf c
+    rnf (Node k v s c) = rnf k `seq` rnf v `seq` rnf s `seq` rnf c

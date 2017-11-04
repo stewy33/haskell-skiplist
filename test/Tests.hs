@@ -2,15 +2,18 @@ import Test.HUnit (Assertion)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.HUnit (testCase)
 
+import Data.Map.SkipList.Pure
+
+newSkp :: SkipList k v
+newSkp = empty $ mkStdGen 0
+
 testInsertUnique :: Assertion
 testInsertUnique = do
-    newSkp <- empty <$> getStdGen
     let skp = foldr (\x skp -> insert x x skp) newSkp [1 .. 100]
     listAssert map (`member` skp) [1 .. 100]
 
 testInsertDuplicates :: Assertion
 testInsertDuplicates = do
-    newSkp <- empty <$> getStdGen
     let numInsertions = 10
         size = 30
         insertAgain i skp = do
@@ -20,3 +23,4 @@ testInsertDuplicates = do
 
 tests :: TestTree
 tests = testGroup "Data.SkipList.Pure" []
+
