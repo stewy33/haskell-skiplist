@@ -24,7 +24,7 @@ data SkipList k v = forall g. RandomGen g =>
     } 
 
 null :: SkipList k v -> Bool
-null (SkipList _ (Head _ _)) = True
+null (SkipList _ (Head Nil Nil)) = True
 null _ = False
 
 empty :: RandomGen g => g -> SkipList k v
@@ -100,7 +100,7 @@ lookup k = go . skpInternal
   where
     go Nil = Nothing
     go n
-      | nodeLTKey sN k = go $ nSibling n
+      | nodeLTKey sN k = go sN
       | nodeEQKey sN k = Just $ nValue sN
       | otherwise = go $ nChild n
       where sN = sibling n
@@ -153,7 +153,6 @@ toList skp = go (skpInternal skp) []
     go Nil = id
     go (Head s c) = go s . go c
     go (Node k v s c) = go s . go c . ((k, v) :)
-
 
 instance (Show k, Show v) => Show (SkipList k v) where
     show (SkipList _ i) = "SkipList {\n" ++ "\n\tskpInternal = \n\t" ++ show i ++ "\n}"

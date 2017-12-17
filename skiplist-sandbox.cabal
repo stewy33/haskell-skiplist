@@ -47,6 +47,7 @@ benchmark skiplist-sandbox-bench
                      , criterion
                      , deepseq
                      , containers
+                     , random
   other-modules:       BenchPure
                      , BenchMap
                      , BenchBase

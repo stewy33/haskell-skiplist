@@ -1,48 +1,42 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 module BenchBase (
     benchBase
-      , TestableMap(..)
-      , bgroup'
-      , Benchmark
-      , BenchmarkOf
+    , Benchmark
+    , bgroup
+    , MapOperations(..)
     ) where
 
+import Control.DeepSeq
 import Criterion.Main
 import Data.List (foldl')
-import Control.DeepSeq
+import Data.Maybe (Maybe, fromMaybe)
+import System.Random
 
-class TestableMap m k v where
-    empty :: m k v
-    insert :: k -> v -> m k v -> m k v
-    fromList :: [(k, v)] -> m k v
+data MapOperations m k v = MapOperations { emptyOp :: m k v, insertOp :: k -> v -> m k v -> m k v, lookupOp :: k -> m k v -> Maybe v }
 
-newtype BenchmarkOfGround m = BenchmarkOf Benchmark
-type BenchmarkOf m = BenchmarkOfGround (m Int Int)
-
-bgroup' :: String -> [BenchmarkOf m] -> Benchmark
-bgroup' name = bgroup name . map (\(BenchmarkOf b) -> b)
-
-benchBase :: forall m. (TestableMap m Int Int, NFData (m Int Int)) => BenchmarkOf m
-benchBase = BenchmarkOf $
-    bgroup "bench base" 
-    [
-      bench "insert ascending absent" $ nf (insertVals repEven) odds
-    , bench "insert ascending present" $ nf (insertVals repEven) evens
+benchBase :: NFData (m Int Int) => MapOperations m Int Int -> [Benchmark]
+benchBase (MapOperations empty insert lookup) = [
+      bench "insert ascending absent" $ nf (insertMany evensMap) odds
+    , bench "insert ascending present" $ nf (insertMany evensMap) evens
+    , bench "get random" $ nf (lookupMany randsMap) rands
     ]
   where
-     rep = force . fromList $ zip all all  :: m Int Int
-     repEven = force . fromList $ zip evens evens :: m Int Int
-     repOdd = force . fromList $ zip odds odds :: m Int Int
+     fullMap = force $ insertMany empty all
+     evensMap = force $ insertMany empty evens
+     oddsMap = force $ insertMany empty odds
+     randsMap = force . insertMany empty . take bound . randoms $ mkStdGen 353
+
      bound = 2^12 :: Int
-     all = [1 .. bound `div` 2]
-     evens = [0, 2 .. bound]
-     odds = [1, 3 .. bound]
 
+     all = [1 .. bound]
+     evens = [0, 2 .. bound * 2]
+     odds = [1, 3 .. bound * 2]
+     rands = force . take bound . randoms $ mkStdGen 8373
 
-     insertVals :: m Int Int -> [Int] -> m Int Int
-     insertVals = foldl' (\m k -> insert k k m)
+     insertMany = foldl' (\map k -> insert k k map)
+     lookupMany map = foldl' (\n k -> fromMaybe n $ lookup k map) 0
+
 

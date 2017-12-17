@@ -3,15 +3,12 @@
 
 module BenchMap where
 
-import qualified Data.Map.Strict as M
+import Prelude hiding (lookup)
+
+import Data.Map
 import BenchBase
 
-instance Ord k => TestableMap M.Map k v where
-    empty = M.empty
-    insert = M.insert
-    fromList = M.fromList
-
 benchMap :: Benchmark
-benchMap = bgroup' "benchmarking Data.Map.Strict"
-    [benchBase :: BenchmarkOf M.Map]
+benchMap = bgroup "benchmarking Data.Map.Strict" $
+    benchBase (MapOperations {emptyOp = empty, insertOp = insert, lookupOp = lookup} :: MapOperations Map Int Int)
 
