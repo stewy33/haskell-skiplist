@@ -1,14 +1,14 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module BenchMap where
 
-import Prelude hiding (lookup)
-
-import Data.Map
+import qualified Data.Map as M
 import BenchBase
 
 benchMap :: Benchmark
-benchMap = bgroup "benchmarking Data.Map.Strict" $
-    benchBase (MapOperations {emptyOp = empty, insertOp = insert, lookupOp = lookup} :: MapOperations Map Int Int)
+benchMap = bgroup "benchmarking Data.Map" $
+    benchBase (MapOperations {
+                  emptyOp  = M.empty
+                , insertOp = M.insert
+                , lookupOp = M.lookup
+                , deleteOp = M.delete
+                             } :: MapOperations M.Map Int Int)
 
