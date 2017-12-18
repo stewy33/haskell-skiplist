@@ -1,4 +1,5 @@
 .stack-work
 .hdevtools.sock
 stack.yaml
+.DS_Store
 
